@@ -16,7 +16,7 @@ CREATE TABLE `account` (
 ## 文章表 
 CREATE TABLE `article` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `content` varchar(3000) DEFAULT NULL,
+  `content` text,
   `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
