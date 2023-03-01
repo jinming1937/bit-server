@@ -102,15 +102,6 @@ export default class NoteBookController extends BaseController {
   }
 
   @authorize()
-  @get('get_content_list')
-  async getContentList(ctx) {
-    ctx.accepts('application/json')
-    const req = await this.getContentTreeData();
-    const data = req.data;
-    ctx.body = {...req, data};
-  }
-
-  @authorize()
   @post('add_content')
   async addContent(ctx) {
     const res = Object.assign({}, this.commonResponse)
@@ -177,6 +168,10 @@ export default class NoteBookController extends BaseController {
     ctx.body = res
   }
 
+  /**
+   * 跟据目录下关联的目录id查找文件
+   * @param ctx ctx
+   */
   @authorize()
   @get('get_file')
   async getFile(ctx) {
@@ -184,6 +179,23 @@ export default class NoteBookController extends BaseController {
     ctx.accepts('application/json')
     if (ctx.query.id) {
       const req = await this.getArticle(ctx.query.id as string);
+      res.data = req;
+    }
+    ctx.body = res;
+  }
+
+  /**
+   * 跟据目录查找目录下的所有文件
+   * 
+   * @param ctx ctx
+   */
+  @authorize()
+  @get('get_file_by_content')
+  async getFileByContent(ctx) {
+    const res = Object.assign({}, this.commonResponse)
+    ctx.accepts('application/json')
+    if (ctx.query.parentId) {
+      const req = await this.getArticleByContent(parseInt(ctx.query.parentId));
       res.data = req;
     }
     ctx.body = res;
@@ -269,6 +281,7 @@ export default class NoteBookController extends BaseController {
     ctx.body = res
   }
 
+  @authorize()
   @post('register')
   async register(ctx) {
     const res = Object.assign({}, this.commonResponse)
@@ -297,6 +310,10 @@ export default class NoteBookController extends BaseController {
     ctx.body = res;
   }
 
+  /**
+   * 跟据文件查找文件
+   * @param ctx ctx
+   */
   @authorize()
   @get('get_file_by_file_id')
   async searchArticleById(ctx) {
@@ -465,6 +482,28 @@ export default class NoteBookController extends BaseController {
       const resp = await NotebookModel.getArticleByKey<T>(key)
       if (Array.isArray(resp) && resp.length > 0) {
         data = resp;
+      }
+    } catch (error) {
+      console.log(error);
+      throw('error!!!')
+    }
+    return data;
+  }
+
+  async getArticleByContent<T>(parentId: number) {
+    let data = []
+    try {
+      const resp = await NotebookModel.getArticleByContent<T>(parentId)
+      if (Array.isArray(resp) && resp.length > 0) {
+        resp.forEach((item) => {
+          data.push({
+            id: item.id,
+            name: item.name,
+            type: item.type,
+            parent: item.parent,
+            serial: item.serial,
+          })
+        })
       }
     } catch (error) {
       console.log(error);

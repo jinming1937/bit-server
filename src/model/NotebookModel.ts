@@ -25,10 +25,15 @@ export class NotebookModel {
   }
   
   static selectContentTree<T, U>(): Promise<T> {
-    const _sql = `SELECT id, \`name\`, \`type\`, parent, \`serial\` FROM content_tree WHERE is_del = 0 order by serial desc, create_time desc`
+    const _sql = `SELECT id, \`name\`, \`type\`, parent, \`serial\` FROM content_tree WHERE is_del = 0 and type = "content" order by serial desc, create_time desc`
     return query<T, unknown>(_sql, [])
   }
 
+  /**
+   * 跟据目录Id 查找文件
+   * @param contentId 目录Id
+   * @returns 
+   */
   static getArticle<T>(contentId: string): Promise<T> {
     const _sql = `
     SELECT content_id, article_id, content, article.create_time, article.update_time FROM content_article
@@ -44,6 +49,17 @@ export class NotebookModel {
     return query<T, unknown>(_sql, [key]);
   }
 
+  static getArticleByContent<T>(parentId: number): Promise<T> {
+    // 防注入
+    const _sql = `select id, \`name\`, \`type\`, parent, \`serial\` from content_tree where parent = ? order by serial desc, create_time desc`
+    return query<T, unknown>(_sql, [parentId]);
+  }
+
+  /**
+   * 文章IdId 查找文章
+   * @param id 文章Id
+   * @returns 
+   */
   static getArticleByArticleId<T>(id: string): Promise<T> {
     // 防注入
     const _sql = `select id, content from article where id = ?`
