@@ -331,14 +331,14 @@ export default class NoteBookController extends BaseController {
   async moveContentByParentId(ctx: IContext) {
     const res = Object.assign({}, this.commonResponse)
     const data = ctx.request.body
-    if (data && data.id && data.parentId && data.id !== data.parentId && data.sort) {
-      const resp = await this.moveContent(data.id, data.parentId, data.sort)
+    if (data && data.id && data.parentId && data.id !== data.parentId) {
+      const resp = await this.moveContent(data.id, data.parentId)
       if (resp.data) {
         res.data = resp.data;
         res.msg = 'success'
       } else {
         res.data = null
-        res.msg = 'error'
+        res.msg = resp.msg
       }
     } else {
       res.data = null
@@ -567,15 +567,21 @@ export default class NoteBookController extends BaseController {
     return data;
   }
 
-  async moveContent<T>(id: number, parentId: number, sort: number) {
+  async moveContent<T>(id: number, parentId: number) {
     const res = Object.assign({}, this.commonResponse)
     try {
-      const data = await NotebookModel.moveContent<IUpdateRes>(id, parentId, sort)
+      const result = await NotebookModel.getSerial(parentId);
+      let sort = 100;
+      if (Array.isArray(result) && result[0]) {
+        sort = (result[0].serial || 100) + 1;
+      }
+      const data = await NotebookModel.moveContentById<IUpdateRes>(id, parentId, sort)
       res.data = data
       res.msg = 'success'
     } catch (error) {
       res.status = 500
       res.msg = error
+      console.log(error);
     }
     return {...res}
   }

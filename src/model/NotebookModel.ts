@@ -14,9 +14,23 @@ export class NotebookModel {
     return query<T, string[]>(_sql, [value, value])
   }
 
-  static moveContent<T>(id: number, parentId: number, sort: number) {
+  static getSerial<T>(parentId: number) {
+    const _sql = `select \`serial\` from content_tree where  is_del = 0 and parent = ? order by \`serial\` desc limit 0, 1;`
+    return query<T, number[]>(_sql, [parentId])
+  }
+
+  static moveContentById<T>(id: number, parentId: number, sort: number) {
     const _sql = `UPDATE content_tree SET parent=?, serial=? where id=?`
     return query<T, number[]>(_sql, [parentId, sort, id])
+  }
+
+  static moveContent<T>(id: number, parentId: number, sort: number) {
+    // const _sql = `UPDATE content_tree SET parent=?, serial=? where id=?`
+    const _sql = `
+    select (@serial:=\`serial\`) from content_tree where is_del = 0 and parent = ? order by \`serial\` desc limit 0, 1;
+    UPDATE content_tree SET parent=?, serial=(@serial+1) where id=? 
+    `
+    return query<T, number[]>(_sql, [parentId, parentId, id])
   }
 
   static updateContentTitle<T>(name: string, id: string) {
@@ -51,7 +65,7 @@ export class NotebookModel {
 
   static getArticleByContent<T>(parentId: number): Promise<T> {
     // 防注入
-    const _sql = `select id, \`name\`, \`type\`, parent, \`serial\` from content_tree where parent = ? order by serial desc, create_time desc`
+    const _sql = `select id, \`name\`, \`type\`, parent, \`serial\` from content_tree where is_del = 0 and parent = ? order by serial desc, create_time desc`
     return query<T, unknown>(_sql, [parentId]);
   }
 
@@ -89,6 +103,13 @@ export class NotebookModel {
   static loginAccount<T>(account: string, pwd: string): Promise<T> {
     const _sql = `select count(*) as \`count\` from account where account = ? and password = ?`;
     return query<T, unknown>(_sql, [account, pwd]);
+  }
+
+  static checkContent<T>(): Promise<T> {
+    const _sql = `select ct1.id, ct1.name as contentName, ct1.parent as contentParent, ct1.type, ct2.name as fileName, ct2.id as fileId, ct2.type as parentType 
+    from content_tree ct1 left join content_tree ct2 on ct1.parent = ct2.id 
+    where ct1.type = "content" and ct2.type="file"`
+    return query<T, unknown>(_sql, []);
   }
 
   // static loginAccountBySession<T>(account: string, pwd: string): Promise<T> {
