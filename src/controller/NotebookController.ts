@@ -102,15 +102,6 @@ export default class NoteBookController extends BaseController {
   }
 
   @authorize()
-  @get('get_content_list')
-  async getContentList(ctx) {
-    ctx.accepts('application/json')
-    const req = await this.getContentTreeData();
-    const data = req.data;
-    ctx.body = {...req, data};
-  }
-
-  @authorize()
   @post('add_content')
   async addContent(ctx) {
     const res = Object.assign({}, this.commonResponse)
@@ -122,7 +113,8 @@ export default class NoteBookController extends BaseController {
         res.msg = 'success'
       } else {
         res.data = null
-        res.msg = 'error'
+        res.msg = resp.msg || 'error'
+        res.status = resp.status
       }
     } else {
       res.data = null
@@ -177,6 +169,10 @@ export default class NoteBookController extends BaseController {
     ctx.body = res
   }
 
+  /**
+   * 跟据目录下关联的目录id查找文件
+   * @param ctx ctx
+   */
   @authorize()
   @get('get_file')
   async getFile(ctx) {
@@ -184,6 +180,23 @@ export default class NoteBookController extends BaseController {
     ctx.accepts('application/json')
     if (ctx.query.id) {
       const req = await this.getArticle(ctx.query.id as string);
+      res.data = req;
+    }
+    ctx.body = res;
+  }
+
+  /**
+   * 跟据目录查找目录下的所有文件
+   * 
+   * @param ctx ctx
+   */
+  @authorize()
+  @get('get_file_by_content')
+  async getFileByContent(ctx) {
+    const res = Object.assign({}, this.commonResponse)
+    ctx.accepts('application/json')
+    if (ctx.query.parentId) {
+      const req = await this.getArticleByContent(parseInt(ctx.query.parentId));
       res.data = req;
     }
     ctx.body = res;
@@ -269,6 +282,7 @@ export default class NoteBookController extends BaseController {
     ctx.body = res
   }
 
+  @authorize()
   @post('register')
   async register(ctx) {
     const res = Object.assign({}, this.commonResponse)
@@ -297,6 +311,10 @@ export default class NoteBookController extends BaseController {
     ctx.body = res;
   }
 
+  /**
+   * 跟据文件查找文件
+   * @param ctx ctx
+   */
   @authorize()
   @get('get_file_by_file_id')
   async searchArticleById(ctx) {
@@ -314,14 +332,14 @@ export default class NoteBookController extends BaseController {
   async moveContentByParentId(ctx: IContext) {
     const res = Object.assign({}, this.commonResponse)
     const data = ctx.request.body
-    if (data && data.id && data.parentId && data.id !== data.parentId && data.sort) {
-      const resp = await this.moveContent(data.id, data.parentId, data.sort)
+    if (data && data.id && data.parentId && data.id !== data.parentId) {
+      const resp = await this.moveContent(data.id, data.parentId)
       if (resp.data) {
         res.data = resp.data;
         res.msg = 'success'
       } else {
         res.data = null
-        res.msg = 'error'
+        res.msg = resp.msg
       }
     } else {
       res.data = null
@@ -334,7 +352,8 @@ export default class NoteBookController extends BaseController {
   async insertContent<T>(name: string, type: fileType, parentId: number) {
     const res = Object.assign({}, this.commonResponse)
     try {
-      const data = await NotebookModel.insertContent<IInsertRes, string[]>([`('${name}', '${type}', '${parentId}')`])
+      const sort = await this.getSort(parentId);
+      const data = await NotebookModel.insertContent<IInsertRes, string[]>(name, type, parentId, sort)
       res.data = {
         id: data.insertId
       }
@@ -473,6 +492,28 @@ export default class NoteBookController extends BaseController {
     return data;
   }
 
+  async getArticleByContent<T>(parentId: number) {
+    let data = []
+    try {
+      const resp = await NotebookModel.getArticleByContent<T>(parentId)
+      if (Array.isArray(resp) && resp.length > 0) {
+        resp.forEach((item) => {
+          data.push({
+            id: item.id,
+            name: item.name,
+            type: item.type,
+            parent: item.parent,
+            serial: item.serial,
+          })
+        })
+      }
+    } catch (error) {
+      console.log(error);
+      throw('error!!!')
+    }
+    return data;
+  }
+
   async getArticleByArticleId<T>(id: string) {
     let data = []
     try {
@@ -528,16 +569,26 @@ export default class NoteBookController extends BaseController {
     return data;
   }
 
-  async moveContent<T>(id: number, parentId: number, sort: number) {
+  async moveContent<T>(id: number, parentId: number) {
     const res = Object.assign({}, this.commonResponse)
     try {
-      const data = await NotebookModel.moveContent<IUpdateRes>(id, parentId, sort)
+      const sort = await this.getSort(parentId);
+      const data = await NotebookModel.moveContentById<IUpdateRes>(id, parentId, sort)
       res.data = data
       res.msg = 'success'
     } catch (error) {
       res.status = 500
       res.msg = error
+      console.log(error);
     }
     return {...res}
+  }
+  async getSort(parentId: number) {
+    const result = await NotebookModel.getSerial(parentId);
+    let sort = 100;
+    if (Array.isArray(result) && result[0]) {
+      sort = (result[0]?.serial || 100) + 1;
+    }
+    return sort;
   }
 }
