@@ -48,3 +48,16 @@ CREATE TABLE `content_tree` (
 
 ## 设置默认数据
 insert into content_tree (`name`, `type`, parent) values ('我的文件夹', 'content', '-1')
+
+## 错误检测：查找文件有子文件/文件夹
+select
+	ct1.id,
+	ct1.name as contentName,
+	ct1.parent as contentParent,
+	ct1.type as contentType,
+	ct2.name as fileName,
+	ct2.id as fileId,
+	ct2.type as parentType
+from content_tree ct1
+left join content_tree ct2 on ct1.parent = ct2.id 
+where ct2.type="file"

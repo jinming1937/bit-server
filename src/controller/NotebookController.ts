@@ -113,7 +113,8 @@ export default class NoteBookController extends BaseController {
         res.msg = 'success'
       } else {
         res.data = null
-        res.msg = 'error'
+        res.msg = resp.msg || 'error'
+        res.status = resp.status
       }
     } else {
       res.data = null
@@ -351,7 +352,8 @@ export default class NoteBookController extends BaseController {
   async insertContent<T>(name: string, type: fileType, parentId: number) {
     const res = Object.assign({}, this.commonResponse)
     try {
-      const data = await NotebookModel.insertContent<IInsertRes, string[]>([`('${name}', '${type}', '${parentId}')`])
+      const sort = await this.getSort(parentId);
+      const data = await NotebookModel.insertContent<IInsertRes, string[]>(name, type, parentId, sort)
       res.data = {
         id: data.insertId
       }
@@ -570,11 +572,7 @@ export default class NoteBookController extends BaseController {
   async moveContent<T>(id: number, parentId: number) {
     const res = Object.assign({}, this.commonResponse)
     try {
-      const result = await NotebookModel.getSerial(parentId);
-      let sort = 100;
-      if (Array.isArray(result) && result[0]) {
-        sort = (result[0].serial || 100) + 1;
-      }
+      const sort = await this.getSort(parentId);
       const data = await NotebookModel.moveContentById<IUpdateRes>(id, parentId, sort)
       res.data = data
       res.msg = 'success'
@@ -584,5 +582,13 @@ export default class NoteBookController extends BaseController {
       console.log(error);
     }
     return {...res}
+  }
+  async getSort(parentId: number) {
+    const result = await NotebookModel.getSerial(parentId);
+    let sort = 100;
+    if (Array.isArray(result) && result[0]) {
+      sort = (result[0]?.serial || 100) + 1;
+    }
+    return sort;
   }
 }

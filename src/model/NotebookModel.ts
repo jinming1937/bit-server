@@ -2,9 +2,9 @@ import query from './query'
 
 export class NotebookModel {
 
-  static insertContent<T, U>(value: U) {
-    const _sql = `INSERT INTO content_tree (\`name\`, \`type\`, parent) VALUES ${value}`
-    return query<T, U>(_sql)
+  static insertContent<T, U>(name: string, type: string, parentId: number, sort: number) {
+    const _sql = `INSERT INTO content_tree (\`name\`, \`type\`, \`parent\`, \`serial\`) VALUES  (?, ?, ?, ?)`
+    return query<T, unknown>(_sql, [name, type, parentId, sort])
   }
 
   static deleteContent<T, U>(value: string) {
