@@ -42,7 +42,8 @@ export default class SoftController extends BaseController {
   async getStatic(ctx: IContext) {
     const matcher = ctx.path.match(/\w+\.(png|jpeg|jpg|webp)$/);
     if (matcher) {
-      const fileName = matcher[0];
+      const pathList = ctx.path.split('/');
+      const fileName = pathList.pop();
       const ext = matcher[1];
       let contentType = MineType[ext] || 'image/png';
       const pathUrl = path.join(__dirname, `../../static/${fileName}`);
