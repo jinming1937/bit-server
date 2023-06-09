@@ -49,7 +49,7 @@ CREATE TABLE `content_tree` (
 ## 设置默认数据
 insert into content_tree (`name`, `type`, parent) values ('我的文件夹', 'content', '-1')
 
-## 错误检测：查找文件有子文件/文件夹
+## 脚本：错误检测：查找文件有子文件/文件夹
 select
 	ct1.id,
 	ct1.name as contentName,
@@ -61,3 +61,18 @@ select
 from content_tree ct1
 left join content_tree ct2 on ct1.parent = ct2.id 
 where ct2.type="file"
+
+## 脚本：空文件夹
+
+
+## Logger 
+
+CREATE TABLE `logger` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `controller_name` varchar(255) CHARACTER SET utf8mb4 NOT NULL DEFAULT '',
+  `action_name` varchar(20) CHARACTER SET utf8mb4 NOT NULL DEFAULT '',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `content` varchar(1000) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=197 DEFAULT CHARSET=utf8mb4;
