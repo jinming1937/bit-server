@@ -5,6 +5,7 @@ import { controller, get, post } from '../middleware/decorator';
 import { authorize } from '../middleware/authorization';
 import { ONE_HOUR_MILLISECOND } from "../libs/const";
 import { IContext } from '../common/types';
+import { Logger } from '../log/logger';
 
 enum fileType {
   content = 'content',
@@ -241,6 +242,7 @@ export default class NoteBookController extends BaseController {
     ctx.body = { data: flag };
   }
 
+  @Logger()
   @post('login')
   async login(ctx) {
     const res = Object.assign({}, this.commonResponse)
